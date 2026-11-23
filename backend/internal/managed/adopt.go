@@ -88,7 +88,7 @@ func (s Service) inspectAdoption(ctx context.Context, app desired.App) (*adoptio
 func (s Service) captureAdoption(app desired.App, origin string, existing adoption) (registry.Record, error) {
 	digest := desired.Digest(existing)
 	dir := s.Legacy.Store.Path("apps", app.ID, "releases", digest)
-	m := manifests.Manifest{SchemaVersion: 1, ID: app.ID, Name: app.Name, Version: "adopted", Kind: "compose", Path: app.Path, Startup: app.Startup, Visibility: "public", RouteMode: "strip_prefix", Source: manifests.Source{ComposeFile: "pagehub.runtime.json", WebService: "app", ContainerPort: 9000}, Health: manifests.Health{Path: "/readyz", TimeoutSeconds: 5, IntervalSeconds: 15}}
+	m := manifests.Manifest{SchemaVersion: 1, ID: app.ID, Name: app.Name, Description: app.Description, IconPath: app.IconPath, Version: "adopted", Kind: "compose", Path: app.Path, Startup: app.Startup, Visibility: "public", RouteMode: "strip_prefix", Source: manifests.Source{ComposeFile: "pagehub.runtime.json", WebService: "app", ContainerPort: 9000}, Health: manifests.Health{Path: "/readyz", TimeoutSeconds: 5, IntervalSeconds: 15}}
 	m.Backup.Mode = "external"
 	m.Lifecycle.Allow = []string{"start", "stop", "restart"}
 	networks := map[string]any{}

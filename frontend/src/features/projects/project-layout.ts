@@ -61,3 +61,38 @@ export function projectLayout(count: number, width: number, height: number) {
   }
   return { size, points, initialCount, centerY };
 }
+
+export function limitProjectPan(
+  x: number,
+  y: number,
+  scale: number,
+  width: number,
+  height: number,
+  layout: ReturnType<typeof projectLayout>,
+) {
+  const size = layout.size * scale;
+  const visible = Math.min(size / 2, 32, width / 2, height / 2);
+  const top = Math.min(width < 600 ? 128 : 100, height / 2);
+  const bottom = Math.max(top + visible, height - 68);
+  let closest = { x: 0, y: 0 };
+  let distance = Infinity;
+  for (const point of layout.points) {
+    const left = (width / 2 + point.x) * scale - size / 2;
+    const upper = (layout.centerY + point.y) * scale - size / 2;
+    const nextX = Math.max(
+      visible - left - size,
+      Math.min(x, width - visible - left),
+    );
+    const nextY = Math.max(
+      top + visible - upper - size,
+      Math.min(y, bottom - visible - upper),
+    );
+    const delta = (nextX - x) ** 2 + (nextY - y) ** 2;
+    if (!delta) return { x, y };
+    if (delta < distance) {
+      closest = { x: nextX, y: nextY };
+      distance = delta;
+    }
+  }
+  return closest;
+}

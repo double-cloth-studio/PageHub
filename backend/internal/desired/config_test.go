@@ -20,6 +20,11 @@ func TestExampleAndDerivedEnvironment(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	for _, app := range c.Apps {
+		if app.Description == "" || app.IconPath == "" {
+			t.Errorf("缺少项目描述或图标: %s", app.ID)
+		}
+	}
 	env := c.Apps[0].Environment("https://example.com:63445")
 	for key, wanted := range map[string]string{"TRAVEL_PUBLIC_ORIGIN": "https://example.com:63445", "SITE_DOMAIN": "example.com", "SITE_SCHEME": "https", "TRAVEL_BASE_PATH": "/diary", "COMPOSE_PROJECT_NAME": "travel-diary", "TRAVEL_WRITE_MODE": "local"} {
 		if env[key] != wanted {
@@ -42,6 +47,7 @@ func TestRejectInvalidConfiguration(t *testing.T) {
 		"port collision":       strings.Replace(base, "port: 8091", "port: 8080", 1),
 		"admin exposure":       strings.Replace(base, "bind: 127.0.0.1", "bind: 0.0.0.0", 1),
 		"duplicate id":         strings.Replace(base, "id: whalgebra", "id: travel-diary", 1),
+		"remote icon":          strings.Replace(base, "/assets/projects/whalgebra.ico", "//example.com/icon.ico", 1),
 		"overlapping route":    strings.Replace(base, "path: /calc/", "path: /diary/calc/", 1),
 		"traversal":            strings.Replace(base, "source_file: dist/Whalgebra.html", "source_file: ../outside.html", 1),
 		"secret":               strings.Replace(base, "      TRAVEL_WRITE_MODE: local", "      ADMIN_PASSWORD: secret", 1),

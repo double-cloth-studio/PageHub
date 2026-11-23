@@ -26,7 +26,7 @@ defineEmits<{
       </div>
       <div class="app-info">
         <h2>
-          <a :href="app.path">{{ app.name }}</a>
+          <a :href="app.path" target="_blank" rel="noopener">{{ app.name }}</a>
         </h2>
         <p v-if="app.description">{{ app.description }}</p>
         <span class="app-path"
@@ -81,7 +81,7 @@ defineEmits<{
           </button>
         </div>
       </div>
-      <a class="visit" :href="app.path" :aria-label="`访问 ${app.name}`">
+      <a class="visit" :href="app.path" target="_blank" rel="noopener" :aria-label="`访问 ${app.name}`">
         <span>打开</span
         ><svg
           viewBox="0 0 24 24"

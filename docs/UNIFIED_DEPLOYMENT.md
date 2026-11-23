@@ -48,6 +48,8 @@ sudo pagehub logs gateway
 
 经审批并完成部署的托管应用可以进入主页目录。管理员保存过展示布局时，可在“编辑展示”中添加新应用。离线验收记录继续保存真实验收结果及对应指纹。
 
+应用条目支持 `description` 和 `icon_path`。图标使用门户 `/assets/` 下的同源图片。已有部署可将配置示例中的对应字段补入 `/etc/pagehub/pagehub.yaml`，再执行 `pagehub apply`。门户的展示配置可覆盖这两项。
+
 ## 更新、备份与恢复
 
 ```bash
@@ -89,7 +91,16 @@ sudo pagehub uninstall travel-diary --purge-data --backup /srv/pagehub/backups/t
 
 接管日记前先核对原项目名和真实卷。当前托管适配器接管单个 app 容器、固定 runtime 卷、无宿主端口和额外权限的 Portal 工程。计划展示原镜像和卷名，审批绑定实际容器配置。原版本源码未知时明确记录 `source_unknown`，首次托管升级后记录新 SHA。现有包格式和 external/external-compose 接入仍可使用相应命令。
 
-卸载移除容器、路由与登记，并将声明式条目的 `enabled` 改为 false。默认保留日记卷、源码和备份，静态应用清理自身发行文件。永久删除要求先验证备份，再输入应用 ID 和实际卷名。Web 管理台提供保留数据的卸载操作。整个平台卸载由外部运维入口执行。
+应用卸载移除容器、路由与登记，并将声明式条目的 `enabled` 改为 false。默认保留日记卷、源码和备份，静态应用清理自身发行文件。永久删除要求先验证备份，再输入应用 ID 和实际卷名。Web 管理台提供保留数据的应用卸载操作。
+
+```bash
+sudo pagehub uninstall self --dry-run
+sudo pagehub uninstall self
+# 独立入口，可在 CLI 被移除后执行，也支持传入 --yes
+sudo bash uninstall.sh
+```
+
+平台卸载停止并移除 PageHub 的 systemd 单元、命令入口、网关和门户容器。应用容器、Docker 网络、持久卷、配置、备份和发行目录保留。共享网关入口会停止服务。重新执行 `install.sh` 可恢复平台。
 
 ## Web 管理
 

@@ -22,7 +22,7 @@ import (
 func (s Service) prepare(ctx context.Context, app desired.App, origin, commit string) (registry.Record, error) {
 	digest := desired.Digest([]string{commit, configDigest(app, origin)})
 	dir := s.Legacy.Store.Path("apps", app.ID, "releases", digest)
-	m := manifests.Manifest{SchemaVersion: 1, ID: app.ID, Name: app.Name, Version: commit, Kind: "static", Path: app.Path, Startup: "always", Visibility: "public", RouteMode: "strip_prefix", Health: manifests.Health{Path: "/", IntervalSeconds: 15, TimeoutSeconds: 5}}
+	m := manifests.Manifest{SchemaVersion: 1, ID: app.ID, Name: app.Name, Description: app.Description, IconPath: app.IconPath, Version: commit, Kind: "static", Path: app.Path, Startup: "always", Visibility: "public", RouteMode: "strip_prefix", Health: manifests.Health{Path: "/", IntervalSeconds: 15, TimeoutSeconds: 5}}
 	m.Source.StaticDir = "dist"
 	m.Backup.Mode = "external"
 	a := registry.Record{Manifest: m, Digest: digest, Directory: dir, Project: project(app), UpdatedAt: time.Now().UTC(), Managed: &registry.Managed{Config: app, Origin: origin, Commit: commit, ConfigSHA256: configDigest(app, origin)}}

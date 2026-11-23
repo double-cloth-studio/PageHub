@@ -86,6 +86,9 @@ sudo bash pagehub.sh app restart my-app
 sudo bash pagehub.sh remove-app my-app
 # 重新加载共享网关配置
 sudo bash pagehub.sh gateway reload
+# 预览平台卸载范围，确认后移除 PageHub 服务及命令入口
+sudo pagehub uninstall self --dry-run
+sudo pagehub uninstall self
 ```
 
 ## 备份、恢复与升级

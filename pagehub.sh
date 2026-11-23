@@ -2,9 +2,13 @@
 set -Eeuo pipefail
 source "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/scripts/lib/common.sh"
 require_root
-require_install
 command="${1:-status}"
 [[ $# == 0 ]] || shift
+if [[ "$command" == uninstall && "${1:-self}" == self ]]; then
+  [[ $# == 0 ]] || shift
+  exec bash "$PAGEHUB_SOURCE/uninstall.sh" "$@"
+fi
+require_install
 case "$command" in
   plan|apply|uninstall) runner desired "$command" "$@" ;;
   start|stop|restart) runner app "$command" "$@" ;;

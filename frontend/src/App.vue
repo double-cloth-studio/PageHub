@@ -3,6 +3,7 @@ import { computed, onMounted, onUnmounted, ref } from "vue";
 import { gsap } from "gsap";
 import SnakeWorld from "./features/snake/SnakeWorld.vue";
 import ProjectUniverse from "./features/projects/ProjectUniverse.vue";
+import { searchProjects } from "./features/projects/project-search";
 import ProjectManager from "./features/admin/ProjectManager.vue";
 import MaintenancePanel from "./features/admin/MaintenancePanel.vue";
 import type { MaintenanceAction } from "./models/app";
@@ -73,7 +74,7 @@ const visibleApps = computed(() => {
               ...app,
               name: project.titleOverride || app.name,
               description: project.descriptionOverride || app.description,
-              iconPath: project.iconPath,
+              iconPath: project.iconPath || app.iconPath,
               keywords: project.keywords,
             },
           ]
@@ -100,12 +101,9 @@ let disposed = false;
 let generation = 0;
 
 const filtered = computed(() =>
-  apps.value.filter(
-    (app) =>
-      (kind.value === "all" || kind.value === app.kind) &&
-      `${app.name} ${app.description || ""} ${app.path}`
-        .toLocaleLowerCase()
-        .includes(query.value.toLocaleLowerCase()),
+  searchProjects(
+    apps.value.filter((app) => kind.value === "all" || kind.value === app.kind),
+    query.value,
   ),
 );
 const healthy = computed(
@@ -879,7 +877,7 @@ onUnmounted(() => {
       </div>
       <ul class="service-list">
         <li v-for="app in visibleApps" :key="app.id">
-          <a :href="app.path">{{ app.name }}</a><span
+          <a :href="app.path" target="_blank" rel="noopener">{{ app.name }}</a><span
             class="status"
             :data-state="app.state"
             ><i></i>{{ stateLabels[app.state] }}</span

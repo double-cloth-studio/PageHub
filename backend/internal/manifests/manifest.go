@@ -19,6 +19,7 @@ type Manifest struct {
 	ID            string `yaml:"id" json:"id"`
 	Name          string `yaml:"name" json:"name"`
 	Description   string `yaml:"description,omitempty" json:"description,omitempty"`
+	IconPath      string `yaml:"icon_path,omitempty" json:"icon_path,omitempty"`
 	Version       string `yaml:"version" json:"version"`
 	Kind          string `yaml:"kind" json:"kind"`
 	Path          string `yaml:"path" json:"path"`
@@ -60,6 +61,7 @@ var routePattern = regexp.MustCompile(`^/[a-zA-Z0-9_-]+(?:/[a-zA-Z0-9_-]+)*/$`)
 var versionPattern = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}$`)
 var ImagePattern = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9./:_-]*@sha256:[a-f0-9]{64}$`)
 var servicePattern = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_-]{0,62}$`)
+var iconPathPattern = regexp.MustCompile(`^/assets/(?:[a-zA-Z0-9_-]+/)*[a-zA-Z0-9_-]+\.(?:svg|png|webp|ico|jpe?g|avif)$`)
 
 func Decode(data []byte, devImages bool) (Manifest, error) {
 	var m Manifest
@@ -91,6 +93,9 @@ func RelativeFile(p string) bool {
 func (m Manifest) Validate(devImages bool) error {
 	if m.SchemaVersion != 1 || !IDPattern.MatchString(m.ID) || !versionPattern.MatchString(m.Version) || strings.TrimSpace(m.Name) == "" || utf8.RuneCountInString(m.Name) > 100 || utf8.RuneCountInString(m.Description) > 500 {
 		return errors.New("schema_version、id、name、description 或 version 无效")
+	}
+	if m.IconPath != "" && !iconPathPattern.MatchString(m.IconPath) {
+		return errors.New("icon_path 必须是 /assets/ 下的本地图标路径")
 	}
 	if !routePattern.MatchString(m.Path) || strings.HasPrefix(m.Path, "/_pagehub/") || strings.HasPrefix(m.Path, "/admin/") || m.Path == "/healthz/" {
 		return errors.New("应用路径无效或占用保留路径")

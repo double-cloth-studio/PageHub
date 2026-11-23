@@ -6,7 +6,8 @@ import { gsap } from "gsap";
 import type { AppEntry } from "../../models/app";
 import { stateLabels } from "../../models/app";
 import Icon from "../../ui/Icon.vue";
-import { projectLayout } from "./project-layout";
+import { limitProjectPan, projectLayout } from "./project-layout";
+import { searchProjects } from "./project-search";
 
 const props = defineProps<{
   apps: AppEntry[];
@@ -22,23 +23,18 @@ const emit = defineEmits<{ close: []; prepare: [count: number] }>();
 const root = ref<HTMLElement>();
 const plane = ref<HTMLElement>();
 const query = ref("");
-const selected = ref("");
+const failedIcons = ref<Record<string, string>>({});
 const scale = ref(1);
 const width = ref(window.innerWidth);
 const height = ref(window.innerHeight);
+const matches = computed(() => searchProjects(props.apps, query.value));
 const layout = computed(() =>
-  projectLayout(props.apps.length, width.value, height.value),
-);
-const matches = computed(() =>
-  props.apps.filter((app) =>
-    `${app.name} ${app.description} ${app.path} ${app.keywords?.join(" ") ?? ""}`
-      .toLowerCase()
-      .includes(query.value.trim().toLowerCase()),
-  ),
+  projectLayout(matches.value.length, width.value, height.value),
 );
 const camera = { x: 0, y: 0, k: 1 };
 let observer: ResizeObserver;
 let animation: gsap.core.Timeline | undefined;
+let cameraTween: gsap.core.Tween | undefined;
 let dragged = false;
 let start = { x: 0, y: 0 };
 let startTransform = { x: 0, y: 0, k: 1 };
@@ -49,11 +45,14 @@ const behavior = zoom<HTMLElement, unknown>()
   .clickDistance(8)
   .filter(
     (event) =>
-      !event.target.closest("button,input,.search-results") &&
+      !event.target.closest(
+        ".universe-header, .universe-bottom, .universe-empty",
+      ) &&
       (!event.button || event.type === "wheel"),
   )
+  .constrain(({ x, y, k }) => constrained(x, y, k))
   .on("start", (event: D3ZoomEvent<HTMLElement, unknown>) => {
-    if (event.sourceEvent) gsap.killTweensOf(camera);
+    if (event.sourceEvent) cameraTween?.kill();
     dragged = false;
     start = {
       x: event.sourceEvent?.clientX ?? 0,
@@ -86,8 +85,17 @@ function draw() {
   if (plane.value)
     gsap.set(plane.value, { x: camera.x, y: camera.y, scale: camera.k });
 }
+function constrained(x: number, y: number, k: number) {
+  const position = limitProjectPan(
+    x, y, k, width.value, height.value, layout.value,
+  );
+  return zoomIdentity.translate(position.x, position.y).scale(k);
+}
 function move(x: number, y: number, k = camera.k) {
-  gsap.to(camera, {
+  cameraTween?.kill();
+  // 补间使用独立对象，避免边界修正反过来修改补间目标。
+  const to = { ...camera };
+  cameraTween = gsap.to(to, {
     x,
     y,
     k,
@@ -97,13 +105,12 @@ function move(x: number, y: number, k = camera.k) {
       if (root.value)
         select(root.value).call(
           behavior.transform,
-          zoomIdentity.translate(camera.x, camera.y).scale(camera.k),
+          constrained(to.x, to.y, to.k),
         );
     },
   });
 }
 function reset() {
-  selected.value = "";
   move(0, 0, 1);
 }
 function changeScale(delta: number) {
@@ -116,16 +123,8 @@ function changeScale(delta: number) {
     next,
   );
 }
-function locate(app: AppEntry) {
-  const index = props.apps.findIndex((item) => item.id === app.id);
-  const position = layout.value.points[index];
-  if (!position) return;
-  selected.value = app.id;
-  move(-position.x, -position.y, 1);
-  query.value = "";
-}
 function visit(event: MouseEvent) {
-  if (dragged || opening) event.preventDefault();
+  if (opening || (event.detail && dragged)) event.preventDefault();
 }
 function close() {
   emit("close");
@@ -133,7 +132,7 @@ function close() {
 async function leave() {
   opening = true;
   animation?.kill();
-  gsap.killTweensOf(camera);
+  cameraTween?.kill();
   if (!root.value) return;
   select(root.value).call(behavior.transform, zoomIdentity);
   await nextTick();
@@ -170,16 +169,19 @@ async function leave() {
   });
 }
 defineExpose({ leave });
-watch(
-  () => props.apps.length,
-  () => {
-    if (
-      props.apps.length &&
-      !props.apps.some((app) => app.id === selected.value)
-    )
-      selected.value = "";
-  },
-);
+watch([query, () => matches.value.length], ([nextQuery], [previousQuery]) => {
+  if (!root.value) return;
+  cameraTween?.kill();
+  if (nextQuery !== previousQuery) {
+    if (opening) animation?.progress(1);
+    select(root.value).call(behavior.transform, constrained(0, 0, 1));
+  } else {
+    select(root.value).call(
+      behavior.transform,
+      constrained(camera.x, camera.y, camera.k),
+    );
+  }
+});
 onMounted(async () => {
   select(root.value!).call(behavior);
   observer = new ResizeObserver((entries) => {
@@ -188,23 +190,14 @@ onMounted(async () => {
       width.value !== bounds.width || height.value !== bounds.height;
     width.value = bounds.width;
     height.value = bounds.height;
-    if (changed) emit("prepare", layout.value.initialCount);
-    const boundX =
-      Math.max(
-        width.value,
-        ...layout.value.points.map((point) => Math.abs(point.x)),
-      ) +
-      width.value / 2;
-    const boundY =
-      Math.max(
-        height.value,
-        ...layout.value.points.map((point) => Math.abs(point.y)),
-      ) +
-      height.value / 2;
-    behavior.translateExtent([
-      [-boundX, -boundY],
-      [boundX + width.value, boundY + height.value],
-    ]);
+    if (changed && root.value) {
+      emit("prepare", layout.value.initialCount);
+      cameraTween?.kill();
+      select(root.value).call(
+        behavior.transform,
+        constrained(camera.x, camera.y, camera.k),
+      );
+    }
   });
   observer.observe(root.value!);
   const bounds = root.value!.getBoundingClientRect();
@@ -249,7 +242,7 @@ onMounted(async () => {
 onUnmounted(() => {
   observer?.disconnect();
   animation?.kill();
-  gsap.killTweensOf(camera);
+  cameraTween?.kill();
   if (root.value) select(root.value).on(".zoom", null);
 });
 </script>
@@ -266,7 +259,9 @@ onUnmounted(() => {
       </button>
       <div class="universe-title">
         项目空间
-        <span class="mono">{{ String(apps.length).padStart(2, "0") }}</span>
+        <span class="mono" aria-live="polite">{{
+          String(matches.length).padStart(2, "0")
+        }}</span>
       </div>
       <div class="project-search">
         <label class="search"
@@ -276,21 +271,16 @@ onUnmounted(() => {
             placeholder="搜索全部项目"
             aria-label="搜索全部项目"
         /></label>
-        <div v-if="query.trim()" class="search-results">
-          <button v-for="app in matches" :key="app.id" @click="locate(app)">
-            <span>{{ app.name }}</span><Icon name="arrow" :size="15" />
-          </button>
-          <p v-if="!matches.length">没有匹配的项目</p>
-        </div>
       </div>
     </header>
     <div ref="plane" class="project-plane">
       <a
-        v-for="(app, index) in apps"
+        v-for="(app, index) in matches"
         :key="app.id"
         class="project-tile"
-        :class="{ selected: selected === app.id }"
         :href="app.path"
+        target="_blank"
+        rel="noopener"
         :style="{
           width: `${layout.size}px`,
           height: `${layout.size}px`,
@@ -303,14 +293,12 @@ onUnmounted(() => {
         <div class="tile-content tile-top">
           <span class="tile-icon"
             ><img
-              v-if="app.iconPath"
+              v-if="app.iconPath && failedIcons[app.id] !== app.iconPath"
               :src="app.iconPath"
               width="28"
               height="28"
               alt=""
-              @error="
-                ($event.target as HTMLImageElement).style.display = 'none'
-              " /><Icon
+              @error="failedIcons[app.id] = app.iconPath!" /><Icon
               v-else
               :name="app.kind === 'static' ? 'code' : 'grid'"
               :size="25" /></span
@@ -321,20 +309,30 @@ onUnmounted(() => {
           <p class="status" :data-state="app.state">
             <i></i>{{ stateLabels[app.state] }}
           </p>
-          <p class="tile-description">{{ app.description || app.path }}</p>
+          <p
+            v-if="app.description"
+            class="tile-description"
+            :title="app.description"
+          >{{ app.description }}</p>
         </div>
       </a>
     </div>
-    <div v-if="!apps.length" class="universe-empty">
+    <div v-if="!matches.length" class="universe-empty">
       <Icon name="grid" :size="32" />
-      <h2>暂未发布项目</h2>
-      <p>已登记且通过离线验证的项目将在这里展示。</p>
-      <button class="button" @click="close">返回首页</button>
+      <template v-if="query.trim()">
+        <h2>没有匹配的项目</h2>
+        <button class="button" @click="query = ''">清除搜索</button>
+      </template>
+      <template v-else>
+        <h2>暂未发布项目</h2>
+        <p>已登记且通过离线验证的项目将在这里展示。</p>
+        <button class="button" @click="close">返回首页</button>
+      </template>
     </div>
     <div class="universe-bottom" @pointerdown.stop @touchstart.stop @wheel.stop>
       <span class="pan-hint"
-        >拖动探索<span v-if="apps.length > layout.initialCount">
-          · 还有 {{ apps.length - layout.initialCount }} 个项目在周围</span
+        >拖动探索<span v-if="matches.length > layout.initialCount">
+          · 还有 {{ matches.length - layout.initialCount }} 个项目在周围</span
         ></span
       >
       <div class="zoom-controls">

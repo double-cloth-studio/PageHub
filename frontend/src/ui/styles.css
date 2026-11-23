@@ -455,34 +455,6 @@ input[type="checkbox"] {
 .search:focus-within {
   border-color: #89979f;
 }
-.search-results {
-  position: absolute;
-  top: 48px;
-  width: 100%;
-  background: #171e24;
-  border: 1px solid #3d484f;
-  padding: 6px;
-  max-height: 40vh;
-  overflow: auto;
-}
-.search-results button {
-  background: transparent;
-  color: #e0e4e2;
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
-  padding: 12px;
-  text-align: left;
-  font-size: 12px;
-}
-.search-results button:hover {
-  background: #2a353e;
-}
-.search-results p {
-  padding: 12px;
-  font-size: 12px;
-  color: var(--muted);
-}
 .project-plane {
   position: absolute;
   left: 0;
@@ -506,11 +478,6 @@ input[type="checkbox"] {
   background: #29343d;
   border-color: #9da9ae;
 }
-.project-tile.selected {
-  border-color: #e4e8e4;
-  outline: 3px solid #e4e8e426;
-  outline-offset: 5px;
-}
 .tile-top {
   display: flex;
   align-items: flex-start;
@@ -519,6 +486,10 @@ input[type="checkbox"] {
 }
 .tile-icon {
   color: #c5d0d4;
+}
+.tile-icon img {
+  display: block;
+  object-fit: contain;
 }
 .tile-bottom h2 {
   font-size: clamp(13px, 1.25vw, 18px);
@@ -559,14 +530,15 @@ input[type="checkbox"] {
   background: #d9bb7e;
 }
 .tile-description {
-  display: none;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
   font-size: 11px;
+  line-height: 1.35;
   color: #9aa7ad;
   margin: 9px 0 0;
   overflow-wrap: anywhere;
-}
-.project-tile.selected .tile-description {
-  display: block;
 }
 .universe-bottom {
   position: absolute;
@@ -917,7 +889,7 @@ input[type="checkbox"] {
   text-overflow: ellipsis;
   color: #c0cbd0;
   opacity: 0.55;
-  font-size: 13px;
+  font-size: clamp(16px, 1.4vw, 20px);
 }
 .admin-dashboard {
   position: absolute;

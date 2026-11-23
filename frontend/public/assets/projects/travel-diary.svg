@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">旅行笔记</title>
+
+  <rect width="64" height="64" rx="14" fill="#4B3026"/>
+
+  <path
+    d="M12.5 20.5C18.8 18.7 25.8 19.4 32 23.5
+       C38.2 19.4 45.2 18.7 51.5 20.5V44.8
+       C44.5 43.2 38.3 44.4 32 49
+       C25.7 44.4 19.5 43.2 12.5 44.8Z"
+    fill="#F3E7D2"
+  />
+
+  <path
+    d="M32 23.5V49"
+    fill="none"
+    stroke="#8A6752"
+    stroke-width="1.7"
+    stroke-linecap="round"
+  />
+</svg>

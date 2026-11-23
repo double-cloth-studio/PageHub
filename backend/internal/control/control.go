@@ -313,7 +313,7 @@ func (m *Manager) Admin() http.Handler {
 		}
 		apps := []gateway.PublicApp{}
 		for _, a := range rgy.Apps {
-			entry := gateway.PublicApp{ID: a.Manifest.ID, Name: a.Manifest.Name, Description: a.Manifest.Description, Path: a.Manifest.Path, Kind: a.Manifest.Kind, Startup: a.Manifest.Startup, State: "unknown", Actions: a.Manifest.Lifecycle.Allow, OfflineReady: a.Manifest.Visibility == "public" && presentation.OfflineReady(m.Store, a)}
+			entry := gateway.PublicApp{ID: a.Manifest.ID, Name: a.Manifest.Name, Description: a.Manifest.Description, IconPath: a.Manifest.IconPath, Path: a.Manifest.Path, Kind: a.Manifest.Kind, Startup: a.Manifest.Startup, State: "unknown", Actions: a.Manifest.Lifecycle.Allow, OfflineReady: a.Manifest.Visibility == "public" && presentation.OfflineReady(m.Store, a)}
 			if a.Managed != nil {
 				entry.Actions = []string{"start", "stop", "restart"}
 				entry.Managed = true

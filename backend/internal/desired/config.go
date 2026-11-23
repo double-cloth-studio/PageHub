@@ -60,6 +60,8 @@ type Update struct {
 type App struct {
 	ID          string            `yaml:"id" json:"id"`
 	Name        string            `yaml:"name" json:"name"`
+	Description string            `yaml:"description,omitempty" json:"description,omitempty"`
+	IconPath    string            `yaml:"icon_path,omitempty" json:"icon_path,omitempty"`
 	Enabled     bool              `yaml:"enabled" json:"enabled"`
 	Path        string            `yaml:"path" json:"path"`
 	Source      Source            `yaml:"source" json:"source"`
@@ -233,7 +235,7 @@ func (c Config) Validate() error {
 }
 
 func (a App) Validate(origin string) error {
-	m := manifests.Manifest{SchemaVersion: 1, ID: a.ID, Name: a.Name, Version: "config", Kind: "static", Path: a.Path, Startup: "always", Visibility: "public", RouteMode: a.Deployment.RouteMode, Source: manifests.Source{StaticDir: "dist"}, Health: manifests.Health{Path: "/", TimeoutSeconds: 5, IntervalSeconds: 15}}
+	m := manifests.Manifest{SchemaVersion: 1, ID: a.ID, Name: a.Name, Description: a.Description, IconPath: a.IconPath, Version: "config", Kind: "static", Path: a.Path, Startup: "always", Visibility: "public", RouteMode: a.Deployment.RouteMode, Source: manifests.Source{StaticDir: "dist"}, Health: manifests.Health{Path: "/", TimeoutSeconds: 5, IntervalSeconds: 15}}
 	m.Backup.Mode = "none"
 	if err := m.Validate(false); err != nil {
 		return err

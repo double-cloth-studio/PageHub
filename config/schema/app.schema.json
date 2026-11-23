@@ -10,6 +10,7 @@
     "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,47}$" },
     "name": { "type": "string", "minLength": 1, "maxLength": 100 },
     "description": { "type": "string", "maxLength": 500 },
+    "icon_path": { "type": "string", "pattern": "^/assets/(?:[a-zA-Z0-9_-]+/)*[a-zA-Z0-9_-]+\\.(?:svg|png|webp|ico|jpe?g|avif)$" },
     "version": { "type": "string", "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}$" },
     "kind": { "enum": ["static", "image", "compose", "external", "external-compose"] },
     "path": { "type": "string", "pattern": "^/[a-zA-Z0-9_-]+(/[a-zA-Z0-9_-]+)*/$" },

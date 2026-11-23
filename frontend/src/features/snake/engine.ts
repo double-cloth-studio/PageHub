@@ -7,6 +7,8 @@ const vectors: Record<Direction, Cell> = {
   left: { x: -1, y: 0 },
   right: { x: 1, y: 0 },
 };
+const directions = Object.values(vectors);
+const automaticRestartDelay = 12;
 export const same = (a: Cell, b: Cell) => a.x === b.x && a.y === b.y;
 
 // 偶数列棋盘的闭合回路，预留最上行作为返回通道。
@@ -33,6 +35,7 @@ export class SnakeEngine {
   route: Cell[];
   indices: Map<string, number>;
   private ordered = true;
+  private restartTicks = 0;
 
   constructor(
     public columns: number,
@@ -57,6 +60,9 @@ export class SnakeEngine {
       Math.min(320, Math.floor(this.route.length * 0.35)),
     );
   }
+  get isAutomatic() {
+    return this.mode === "auto" || this.restartTicks > 0;
+  }
 
   reset(mode: GameMode = "auto") {
     const head = Math.floor(this.route.length * 0.38);
@@ -69,11 +75,14 @@ export class SnakeEngine {
     this.recycling = false;
     this.turned = false;
     this.ordered = true;
+    this.steps = 0;
+    this.restartTicks = 0;
     this.setDirection(this.route[(head + 1) % this.route.length]!);
     this.placeFood();
   }
 
   manual(direction: Direction) {
+    this.restartTicks = 0;
     this.mode = "manual";
     this.ordered = false;
     this.turned = false;
@@ -81,6 +90,7 @@ export class SnakeEngine {
   }
 
   automatic() {
+    if (this.restartTicks > 0) return;
     this.mode = "auto";
     this.turned = false;
     this.ordered = this.isOrdered();
@@ -141,7 +151,7 @@ export class SnakeEngine {
         }
         return path;
       }
-      for (const vector of Object.values(vectors)) {
+      for (const vector of directions) {
         const next = { x: point.x + vector.x, y: point.y + vector.y };
         if (
           next.x < 0 ||
@@ -183,7 +193,7 @@ export class SnakeEngine {
     );
     if (tail.length) return tail[0]!;
     return (
-      Object.values(vectors)
+      directions
         .map((vector) => ({ x: head.x + vector.x, y: head.y + vector.y }))
         .find(
           (point) =>
@@ -227,7 +237,7 @@ export class SnakeEngine {
       : null;
   }
 
-  private autoNext(head: Cell): Cell {
+  private autoNext(head: Cell, roll: number): Cell {
     if (!this.ordered) {
       this.ordered = this.isOrdered();
       if (!this.ordered) return this.freeNext(head);
@@ -235,13 +245,14 @@ export class SnakeEngine {
     const capacity = this.route.length;
     const index = this.indices.get(`${head.x},${head.y}`)!;
     const fallback = this.route[(index + 1) % capacity]!;
+    if (roll < 0.15) return fallback;
     if (!this.food || this.cells.length > capacity * 0.3) return fallback;
     const tail = this.cells[this.cells.length - 1]!;
     const tailIndex = this.indices.get(`${tail.x},${tail.y}`)!;
     const foodIndex = this.indices.get(`${this.food.x},${this.food.y}`)!;
     const distance = (target: number) => (target - index + capacity) % capacity;
     const occupied = new Set(this.cells.map((cell) => `${cell.x},${cell.y}`));
-    const candidates = Object.values(vectors).map((vector) => ({
+    const candidates = directions.map((vector) => ({
       x: head.x + vector.x,
       y: head.y + vector.y,
     }));
@@ -269,11 +280,24 @@ export class SnakeEngine {
   }
 
   tick() {
+    if (this.restartTicks > 0) {
+      this.restartTicks--;
+      if (this.restartTicks === 0) this.reset();
+      return;
+    }
     if (this.mode !== "auto" && this.mode !== "manual") return;
     const head = this.cells[0]!;
     let next: Cell;
     if (this.mode === "auto") {
-      next = this.autoNext(head);
+      const roll = this.random();
+      // 偶尔尝试邻格，其余时间沿安全路径移动。
+      if (roll < 0.002) {
+        const vector = directions[Math.floor((roll / 0.002) * directions.length)]!;
+        next = { x: head.x + vector.x, y: head.y + vector.y };
+        this.ordered = false;
+      } else {
+        next = this.autoNext(head, roll);
+      }
       this.setDirection(next);
     } else {
       const vector = vectors[this.direction];
@@ -288,6 +312,7 @@ export class SnakeEngine {
       next.y >= this.rows ||
       body.some((cell) => same(cell, next))
     ) {
+      if (this.mode === "auto") this.restartTicks = automaticRestartDelay;
       this.mode = "dead";
       return;
     }

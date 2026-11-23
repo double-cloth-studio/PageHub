@@ -28,6 +28,8 @@ update:
 apps:
   - id: travel-diary
     name: Travel Diary
+    description: 记录旅行中的见闻、照片与日记。
+    icon_path: /assets/projects/travel-diary.svg
     enabled: true
     path: /diary/
     source:
@@ -62,6 +64,8 @@ apps:
 
   - id: whalgebra
     name: Whalgebra
+    description: 在浏览器里完成日常计算与数学运算。
+    icon_path: /assets/projects/whalgebra.ico
     enabled: true
     path: /calc/
     source:

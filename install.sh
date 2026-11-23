@@ -54,6 +54,7 @@ bash "$PAGEHUB_ROOT/current/scripts/healthcheck.sh"
 date -u +%FT%TZ > "$PAGEHUB_ROOT/current/.pagehub-verified"
 printf '{"version":"%s","installed_at":"%s","root":"%s"}\n' "$(cat "$PAGEHUB_ROOT/current/VERSION")" "$(date -u +%FT%TZ)" "$PAGEHUB_ROOT" > "$PAGEHUB_ROOT/state/install-state.json.pending"
 mv -f "$PAGEHUB_ROOT/state/install-state.json.pending" "$PAGEHUB_ROOT/state/install-state.json"
+rm -f -- "$PAGEHUB_ROOT/state/uninstalled.json"
 flock -u 9
 systemctl start pagehub.service
 if [[ -n "$config_file" ]]; then runner desired apply -c "$config_file" "${apply_options[@]}"; fi

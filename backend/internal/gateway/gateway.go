@@ -28,6 +28,7 @@ type PublicApp struct {
 	ID           string   `json:"id"`
 	Name         string   `json:"name"`
 	Description  string   `json:"description,omitempty"`
+	IconPath     string   `json:"iconPath,omitempty"`
 	Path         string   `json:"path"`
 	Kind         string   `json:"kind"`
 	Startup      string   `json:"startup"`
@@ -43,7 +44,7 @@ func Catalog(r registry.Registry) []PublicApp {
 		if m.Visibility != "public" || a.Disabled {
 			continue
 		}
-		apps = append(apps, PublicApp{ID: m.ID, Name: m.Name, Description: m.Description, Path: m.Path, Kind: m.Kind, Startup: m.Startup, State: "unknown", Actions: m.Lifecycle.Allow})
+		apps = append(apps, PublicApp{ID: m.ID, Name: m.Name, Description: m.Description, IconPath: m.IconPath, Path: m.Path, Kind: m.Kind, Startup: m.Startup, State: "unknown", Actions: m.Lifecycle.Allow})
 	}
 	return apps
 }
